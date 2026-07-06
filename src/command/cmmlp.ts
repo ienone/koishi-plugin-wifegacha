@@ -2,8 +2,9 @@ import { Context, h } from "koishi";
 import { renameSync } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function cmmlp(ctx: Context,config:Config) {
   let wifegachaPath = "";
@@ -23,6 +24,7 @@ export function cmmlp(ctx: Context,config:Config) {
   ctx
     .command("重命名 <name> <newName> 重命名老婆")
     .action(async ({ session }, name, newName) => {
+        const send = createRecallSender(session, ctx, config, "rename");
       if(!config.wifeUpdateGroup.includes(session.userId.toString()) && !config.wifeAllOperationGroup.includes(session.userId.toString()) && session.userId !== config.adminId){
         return [h("quote", { id: session.messageId }), "你无权重命名老婆"];
       }
@@ -48,7 +50,7 @@ export function cmmlp(ctx: Context,config:Config) {
         filepath: path.join(wifegachaPath, `${newName}.png`),
       });
       const imageBuffer = await utils.readImageAsBinarySync(path.join(wifegachaPath, `${newName}.png`));
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "老婆更新成功",
         h.image(imageBuffer, "image/png"),

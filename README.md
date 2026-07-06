@@ -1,8 +1,17 @@
-# 🌸 koishi-plugin-wifegacha
+# 🌸 koishi-plugin-wifegacha-enhanced
 
 > 抽老婆插件 | **开发中...**
 
 一个用于 Koishi 的插件，让你的群聊更有趣！
+
+> 本仓库在原项目基础上新增了可配置的消息撤回、自动图鉴缩略图、跨平台 `sharp` 适配等增强能力，方便直接发布到 npm 使用。
+
+## ✨ 新增增强功能
+
+- 🗑️ **全局消息撤回面板**：所有指令都可以像 deer-pipe 一样独立开关撤回，冷却时间也可配置。
+- 🖼️ **自动图鉴生成**：缺少缩略图时自动重建素材目录，并在 `data/assets` 下缓存，避免手动清空。
+- 📦 **CI 发布流程**：新增 GitHub Actions 工作流，自动构建并推送 npm 包。
+- 🧱 **容器易用性**：`sharp` 依赖打包在插件内，MuSL/Alpine 环境无需额外构建。
 
 ---
 
@@ -42,7 +51,7 @@ wifegacha/
 
 ⚠️ 当前插件仍在开发中，功能、命令可能会有变化。请关注更新。
 
-❤️ 功能设计完全来源于[WifeGacha](https://github.com/Rlezzo/WifeGacha/tree/master)
+❤️ 功能设计来源于 [WifeGacha](https://github.com/Rlezzo/WifeGacha/tree/master) 与 [Bear-biscuit/koishi-plugin-wifegacha](https://github.com/Bear-biscuit/koishi-plugin-wifegacha)。本仓库仅在前人工作上做增强，非常感谢原作者们的付出！
 
 
 ---
@@ -50,4 +59,3 @@ wifegacha/
 ## 📫 联系作者
 
 欢迎提出建议或提交 Issue，一起完善这个插件！
-

@@ -1,5 +1,5 @@
 import { Context } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 export interface GroupData {
     id: number;
     groupId: string;

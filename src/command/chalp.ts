@@ -1,9 +1,12 @@
 import { Context, h } from "koishi";
 import { pathToFileURL } from "url";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
-export function chalp(ctx: Context) {
+export function chalp(ctx: Context, config: Config) {
   ctx.command("查老婆 [userId] 查看个人老婆或指定群友老婆").action(async ({ session }, userId) => {
+        const send = createRecallSender(session, ctx, config, "query");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
@@ -15,14 +18,14 @@ export function chalp(ctx: Context) {
     }))[0]
     // ctx.logger.info(targetData)
     if (targetData.wifeName === '') {
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `对方还没有老婆`,
       ]);
     }
     else {
       const imageBuffer = await utils.readImageAsBinarySync((await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].filepath);
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `对方的老婆是 ${targetData.wifeName} ${
           (await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].comeFrom ? `，来自《${(await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].comeFrom}》` : ""
@@ -46,7 +49,7 @@ export function chalp(ctx: Context) {
       const comeFrom = (
         await ctx.database.get("wifeData", { name: userData.wifeName })
       )[0].comeFrom;
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `你的老婆是 ${userData.wifeName} ${
           comeFrom ? `，来自《${comeFrom}》` : ""
@@ -55,7 +58,7 @@ export function chalp(ctx: Context) {
       ]);
       return;
     } else {
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `你还没有老婆，快去抽一个吧`,
       ]);

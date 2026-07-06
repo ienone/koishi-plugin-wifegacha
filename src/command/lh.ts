@@ -1,21 +1,23 @@
 import { Context, h } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function lh(ctx: Context, config: Config) {
   ctx.command("离婚 解除婚姻关系").action(async ({ session }) => {
+        const send = createRecallSender(session, ctx, config, "divorce");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
     if (!config.divorceSwitchgear) {
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "离婚功能未开启，请联系管理员",
       ]);
       return;
     }
     if (config.divorceBlockGroup.includes(session.channelId.toString())) {
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "本群离婚功能已被禁止，请联系管理员",
       ]);
@@ -64,7 +66,7 @@ export function lh(ctx: Context, config: Config) {
     if (diffSeconds < config.divorceDateInterval) {
       const minutes = Math.floor((config.divorceDateInterval - diffSeconds) / 60);
       const seconds = (config.divorceDateInterval - diffSeconds) % 60;
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `离婚冷却中，${minutes}分${seconds}秒后可以再次离婚`,
       ]);
@@ -72,7 +74,7 @@ export function lh(ctx: Context, config: Config) {
     }
     // ctx.logger.info(userData);
     if (!userData?.wifeName) {
-      session.send([h("quote", { id: session.messageId }), "你还没有老婆"]);
+      send([h("quote", { id: session.messageId }), "你还没有老婆"]);
       return;
     }
     // 老婆数据
@@ -86,7 +88,7 @@ export function lh(ctx: Context, config: Config) {
       userData.divorceCount >= config.divorceLimit &&
       userData.divorceCount > 0
     ) {
-      session.send(`你已经离婚${config.divorceLimit}次了，你这个渣男`);
+      send(`你已经离婚${config.divorceLimit}次了，你这个渣男`);
       return;
     }
     // 更新用户数据
@@ -136,7 +138,7 @@ export function lh(ctx: Context, config: Config) {
         groupData: groupWifeData,
       }
     );
-    session.send([
+    send([
       h("quote", { id: session.messageId }),
       `你和${userData.wifeName}离婚了\n${userData.wifeName}对你的好感度 -1`,
     ]);

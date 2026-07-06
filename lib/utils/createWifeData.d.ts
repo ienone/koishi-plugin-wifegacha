@@ -1,3 +1,3 @@
 import { Context } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 export declare function createWifeData(ctx: Context, config: Config): void;

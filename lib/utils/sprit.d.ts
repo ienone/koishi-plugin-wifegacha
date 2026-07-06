@@ -1,5 +1,5 @@
 import { Context } from 'koishi';
-import { Config } from '../index';
+import type { Config } from '../config';
 declare function ensureDirs(): void;
 /**
  * 生成彩色和灰度缩略图

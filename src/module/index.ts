@@ -1,5 +1,5 @@
 import { Context } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import { wifeUser } from "./wifeUser";
 import { wifeData } from "./wifeData";
 import { groupData } from "./groupData";

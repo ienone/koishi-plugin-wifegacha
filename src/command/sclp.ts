@@ -1,12 +1,14 @@
 import { Context, h } from "koishi";
 import { unlinkSync } from "fs";
 import path from "path";
-import { Config } from "../index";
+import type { Config } from "../config";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function sclp(ctx: Context,config:Config) {
   ctx
     .command("删除老婆 <name> 删除老婆信息")
     .action(async ({ session }, name) => {
+        const send = createRecallSender(session, ctx, config, "remove");
       // ctx.logger.info(name, comeFrom, image)
       if(!config.wifeDeleteGroup.includes(session.userId.toString()) && !config.wifeAllOperationGroup.includes(session.userId.toString()) && session.userId !== config.adminId){
         return [h("quote", { id: session.messageId }), "你无权删除老婆"];
@@ -50,7 +52,7 @@ export function sclp(ctx: Context,config:Config) {
           wifeName: '',
         });
       }
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "老婆删除成功",
       ]);
