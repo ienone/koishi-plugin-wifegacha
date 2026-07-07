@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { Context } from 'koishi';
-import { Config } from '../index';
+import type { Config } from '../config';
 
 // === 配置路径 ===
 let inputDir = "";

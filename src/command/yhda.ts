@@ -1,11 +1,13 @@
 import { Context, h } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function yhda(ctx: Context, config: Config) {
   ctx
     .command("用户档案 [userId] 查看用户档案")
     .action(async ({ session }, userId) => {
+        const send = createRecallSender(session, ctx, config, "userArchive");
       if (ctx.config.blockGroup.includes(session.channelId.toString())) {
         return;
       }
@@ -61,7 +63,7 @@ export function yhda(ctx: Context, config: Config) {
           (config.lpdaDateInterval - diffSeconds) / 60
         );
         const seconds = (config.lpdaDateInterval - diffSeconds) % 60;
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `档案查询冷却中，${minutes}分${seconds}秒后可以再次查询`,
         ]);
@@ -140,7 +142,7 @@ export function yhda(ctx: Context, config: Config) {
           }
         }
 
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `- 目标用户档案：\n`,
           `- 老婆收集进度：${wifeHistoriesNum}/${wifeDataNum}\n`,
@@ -223,7 +225,7 @@ export function yhda(ctx: Context, config: Config) {
             }
           }
         }
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `- 群档案：\n`,
           `${groupDrawCount ? `- 群总抽老婆次数：${groupDrawCount}\n` : ""}`,

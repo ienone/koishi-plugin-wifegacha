@@ -1,13 +1,15 @@
 import { Context, h } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import path from "path";
 import { pathToFileURL } from "url";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function lpda(ctx: Context, config: Config) {
   ctx
     .command("老婆档案 [wifeName] 查询老婆档案")
     .action(async ({ session }, wifeName) => {
+        const send = createRecallSender(session, ctx, config, "archive");
       if (ctx.config.blockGroup.includes(session.channelId.toString())) {
         return;
       }
@@ -53,13 +55,13 @@ export function lpda(ctx: Context, config: Config) {
             item.name.includes(wifeName)
           );
           if (possibleWife.length > 0) {
-            session.send([
+            send([
               h("quote", { id: session.messageId }),
               "你可能是想找：\n",
               possibleWife.map((item) => item.name).join("\n"),
             ]);
           } else {
-            session.send([h("quote", { id: session.messageId }), "老婆不存在"]);
+            send([h("quote", { id: session.messageId }), "老婆不存在"]);
           }
         } else {
           const now = new Date().getTime();
@@ -70,7 +72,7 @@ export function lpda(ctx: Context, config: Config) {
               (config.lpdaDateInterval - diffSeconds) / 60
             );
             const seconds = (config.lpdaDateInterval - diffSeconds) % 60;
-            session.send([
+            send([
               h("quote", { id: session.messageId }),
               `档案查询冷却中，${minutes}分${seconds}秒后可以再次查询`,
             ]);
@@ -118,7 +120,7 @@ export function lpda(ctx: Context, config: Config) {
               )
             ) {
               const imageBuffer = await utils.readImageAsBinarySync(wife.filepath);
-              session.send([
+              send([
                 h("quote", { id: session.messageId }),
                 `名字：${wife.name}\n`,
                 `${wife.comeFrom ? `来自：${wife.comeFrom}\n` : ""}`,
@@ -271,7 +273,7 @@ export function lpda(ctx: Context, config: Config) {
               ]);
             } else {
               const imageBuffer = await utils.readImageAsBinarySync(wife.filepath);
-              session.send([
+              send([
                 h("quote", { id: session.messageId }),
                 `名字：${wife.name}\n`,
                 `${wife.comeFrom ? `来自：${wife.comeFrom}\n` : ""}`,
@@ -344,7 +346,7 @@ export function lpda(ctx: Context, config: Config) {
             (config.lpdaDateInterval - diffSeconds) / 60
           );
           const seconds = (config.lpdaDateInterval - diffSeconds) % 60;
-          session.send([
+          send([
             h("quote", { id: session.messageId }),
             `档案查询冷却中，${minutes}分${seconds}秒后可以再次查询`,
           ]);
@@ -417,7 +419,7 @@ export function lpda(ctx: Context, config: Config) {
                 (item) => item.groupId === session.channelId.toString()
               )?.ntrFailCount
           )[0];
-          session.send([
+          send([
             h("quote", { id: session.messageId }),
             "本群老婆统计：\n",
             `${mostDrawWife.groupData.find(
@@ -457,7 +459,7 @@ export function lpda(ctx: Context, config: Config) {
             }次\n` : ""}`,
           ]);
         } else {
-          session.send([
+          send([
             h("quote", { id: session.messageId }),
             "本群没有老婆档案",
           ]);

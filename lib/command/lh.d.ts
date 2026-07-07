@@ -1,3 +1,3 @@
 import { Context } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 export declare function lh(ctx: Context, config: Config): void;

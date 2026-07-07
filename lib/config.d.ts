@@ -1,0 +1,30 @@
+import { Schema } from "koishi";
+import type { MessageRecallSettings } from "./utils/messageRecall";
+export interface Config {
+    blockGroup: string[];
+    ntrOrdinal: number;
+    probabilityMath: number;
+    probabilityMathDirect: number;
+    ntrSwitchgear: boolean;
+    ntrBlockGroup: string[];
+    illustratedBook: boolean;
+    divorceLimit: number;
+    divorceSwitchgear: boolean;
+    divorceBlockGroup: string[];
+    fuckWifeCoolingTime: number;
+    fuckWifeSwitchgear: boolean;
+    fuckWifeDetailedReply: boolean;
+    fuckWifeVoiceReply: boolean;
+    fuckWifeBlockGroup: string[];
+    wifeNameSeparator: string;
+    wifeAllOperationGroup: string[];
+    wifeUploadGroup: string[];
+    wifeUpdateGroup: string[];
+    wifeDeleteGroup: string[];
+    adminId: string;
+    wifeImageQuality: number;
+    lpdaDateInterval: number;
+    divorceDateInterval: number;
+    messageRecall: MessageRecallSettings;
+}
+export declare const ConfigSchema: Schema<Config>;

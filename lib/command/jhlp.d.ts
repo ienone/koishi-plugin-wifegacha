@@ -1,2 +1,3 @@
 import { Context } from "koishi";
-export declare function jhlp(ctx: Context): void;
+import type { Config } from "../config";
+export declare function jhlp(ctx: Context, config: Config): void;

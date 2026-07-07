@@ -1,5 +1,5 @@
 import { Context } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 export interface WifeData {
     id: number;
     name: string;

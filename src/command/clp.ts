@@ -1,9 +1,12 @@
 import { Context, h } from "koishi";
 import { pathToFileURL } from "url";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
-export function clp(ctx: Context) {
+export function clp(ctx: Context, config: Config) {
   ctx.command("抽老婆 抽一个老婆").action(async ({ session }) => {
+        const send = createRecallSender(session, ctx, config, "draw");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
@@ -123,7 +126,7 @@ export function clp(ctx: Context) {
       if (found) {
         const imageBuffer = await utils.readImageAsBinarySync(wifeImage);
         // 如果找到，说明是重复抽到
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `重复了。\n你今天抽到的老婆是:${wifeName}${
             comeFrom ? `\n来自《${comeFrom}》` : ""
@@ -138,7 +141,7 @@ export function clp(ctx: Context) {
       } else {
         // 如果没找到，说明是第一次抽到
         const imageBuffer = await utils.readImageAsBinarySync(wifeImage);
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `出新了！\n你今天抽到的老婆是:${wifeName}${
             comeFrom ? `\n来自《${comeFrom}》` : ""
@@ -156,7 +159,7 @@ export function clp(ctx: Context) {
           await ctx.database.get("wifeData", { name: userData.wifeName })
         )[0].comeFrom;
         const imageBuffer = await utils.readImageAsBinarySync(wifeImage);
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `你的老婆是 ${userData.wifeName} ${
             comeFrom ? `，来自《${comeFrom}》` : ""
@@ -173,7 +176,7 @@ export function clp(ctx: Context) {
           }
         );
         // 如果没抽到，说明老婆都被娶走了
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           "悲，老婆都被娶走了……",
         ]);

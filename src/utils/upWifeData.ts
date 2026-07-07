@@ -2,7 +2,7 @@ import { Context } from "koishi";
 import { readdirSync } from "fs";
 import path from "path";
 import sprit from "./sprit";
-import { Config } from "../index";
+import type { Config } from "../config";
 
 let wifegachaPath = "";
 if (path.join(__dirname).split("\\").pop()=="utils"){

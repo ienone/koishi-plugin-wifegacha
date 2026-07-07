@@ -1,10 +1,12 @@
 import { Context, h } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import sprit from "../utils/sprit";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function lptj(ctx: Context, config: Config) {
   ctx.command("老婆图鉴 [targetUserId] 查看老婆图鉴").action(async ({ session }, targetUserId) => {
+        const send = createRecallSender(session, ctx, config, "album");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
@@ -28,7 +30,7 @@ export function lptj(ctx: Context, config: Config) {
         })
       )[0].wifeHistories.map((item) => item.wifeName);
       const imageBuffer = await sprit.generateMixedBackgroundImage(ctx, config, lpList);
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         `你的老婆图鉴已出炉~`,
         h.image(imageBuffer, "png"),
@@ -44,7 +46,7 @@ export function lptj(ctx: Context, config: Config) {
         .filter((item) => !item.isNtr)
         .map((item) => item.wifeName);
       const imageBuffer = await sprit.generateMixedBackgroundImage(ctx, config, lpList);
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "你的老婆图鉴已出炉~",
         h.image(imageBuffer, "png"),

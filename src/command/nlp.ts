@@ -1,23 +1,25 @@
 import { Context, h } from "koishi";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function nlp(ctx: Context, config: Config) {
   ctx
     .command("牛老婆 <userId> 牛指定群友老婆")
     .action(async ({ session }, userId) => {
+        const send = createRecallSender(session, ctx, config, "ntr");
       if (ctx.config.blockGroup.includes(session.channelId.toString())) {
         return;
       }
       if (!config.ntrSwitchgear) {
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           "牛老婆功能未开启，请联系管理员",
         ]);
         return;
       }
       if (config.ntrBlockGroup.includes(session.channelId.toString())) {
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           "本群牛老婆功能已被禁止，请联系管理员",
         ]);
@@ -27,11 +29,11 @@ export function nlp(ctx: Context, config: Config) {
       userId = session.content.match(/<at id="(\d+)"\s*\/>/)?.[1];
       if (!userId) {
         // 提示用户@要牛的群友
-        session.send([h("quote", { id: session.messageId }), "请@要牛的群友"]);
+        send([h("quote", { id: session.messageId }), "请@要牛的群友"]);
         return;
       }
       if (userId === session.userId) {
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           "自己牛自己，你真是个变态🤓",
         ]);
@@ -85,7 +87,7 @@ export function nlp(ctx: Context, config: Config) {
       }
 
       if (myUserData.ntrCount >= config.ntrOrdinal && myUserData.ntrCount > 0) {
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           "你已经没有机会了",
         ]);
@@ -93,7 +95,7 @@ export function nlp(ctx: Context, config: Config) {
       }
       // 如果目标用户没有抽到老婆，则提示对方没有老婆
       if (!targetUserData || !targetUserData?.wifeName) {
-        session.send([h("quote", { id: session.messageId }), "对方还没有老婆"]);
+        send([h("quote", { id: session.messageId }), "对方还没有老婆"]);
         return;
       }
       // 获取对方老婆好感等级
@@ -293,7 +295,7 @@ export function nlp(ctx: Context, config: Config) {
             groupData: groupWifeData,
           }
         );
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `你的阴谋得逞了!\n${
             (await session.bot.getUser(userId)).name
@@ -302,7 +304,7 @@ export function nlp(ctx: Context, config: Config) {
           }%`,
         ]);
       } else {
-        session.send([
+        send([
           h("quote", { id: session.messageId }),
           `你的阴谋失败了，黄毛被干掉了\n你还有${
             config.ntrOrdinal - myUserData.ntrCount - 1

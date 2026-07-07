@@ -2,8 +2,9 @@ import { Context, h } from "koishi";
 import { writeFileSync } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function tjlp(ctx: Context,config:Config) {
   let wifegachaPath = "";
@@ -24,6 +25,7 @@ export function tjlp(ctx: Context,config:Config) {
   ctx
     .command("添加老婆 <name> <image> 添加老婆信息")
     .action(async ({ session }, name, image) => {
+        const send = createRecallSender(session, ctx, config, "add");
       ctx.logger.info(path.join(__dirname))
       if(!config.wifeUploadGroup.includes(session.userId.toString()) && !config.wifeAllOperationGroup.includes(session.userId.toString()) && session.userId !== config.adminId){
         return [h("quote", { id: session.messageId }), "你无权添加老婆"];
@@ -56,7 +58,7 @@ export function tjlp(ctx: Context,config:Config) {
         groupData: []
       });
       const imageBuffer = await utils.readImageAsBinarySync(path.join(wifegachaPath, `${name}.png`));
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "老婆添加成功",
         h.image(imageBuffer, "image/png"),

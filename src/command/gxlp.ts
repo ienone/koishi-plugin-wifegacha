@@ -2,8 +2,9 @@ import { Context, h } from "koishi";
 import { writeFileSync, unlinkSync } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import { Config } from "../index";
+import type { Config } from "../config";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 
 export function gxlp(ctx: Context,config:Config) {
   let wifegachaPath = "";
@@ -23,6 +24,7 @@ export function gxlp(ctx: Context,config:Config) {
   ctx
     .command("更新老婆 <name> <image> 更新老婆信息")
     .action(async ({ session }, name, image) => {
+        const send = createRecallSender(session, ctx, config, "update");
       if(!config.wifeUpdateGroup.includes(session.userId.toString()) && !config.wifeAllOperationGroup.includes(session.userId.toString()) && session.userId !== config.adminId){
         return [h("quote", { id: session.messageId }), "你无权更新老婆"];
       }
@@ -51,7 +53,7 @@ export function gxlp(ctx: Context,config:Config) {
         filepath: path.join(wifegachaPath, `${wifeComeFrom?wifeComeFrom+config.wifeNameSeparator:''}${name}.png`),
       });
       const imageBuffer = await utils.readImageAsBinarySync(path.join(wifegachaPath, `${wifeComeFrom?wifeComeFrom+config.wifeNameSeparator:''}${name}.png`));
-      session.send([
+      send([
         h("quote", { id: session.messageId }),
         "老婆更新成功",
         h.image(imageBuffer, "image/png"),

@@ -1,9 +1,10 @@
 import { Context, h, Session } from "koishi";
-import { Config } from "..";
+import type { Config } from "../config";
 import path from "path";
 import { pathToFileURL } from "url";
 import { getRandomWavFile } from "../utils/getWavFlieName";
 import utils from "../utils";
+import { createRecallSender } from "../utils/messageRecall";
 export function rlp(ctx: Context,config: Config) {
 
   let wifegachaPath = "";
@@ -22,15 +23,16 @@ export function rlp(ctx: Context,config: Config) {
 
   ctx.command("日老婆 增加老婆好感度")
   .action(async ({ session }) => {
+        const send = createRecallSender(session, ctx, config, "affection");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
     if(!config.fuckWifeSwitchgear){
-      session.send([h("quote", { id: session.messageId }), "好感度功能未开启，请联系管理员"]);
+      send([h("quote", { id: session.messageId }), "好感度功能未开启，请联系管理员"]);
       return;
     }
     if(config.fuckWifeBlockGroup.includes(session.channelId.toString())){
-      session.send([h("quote", { id: session.messageId }), "本群好感度功能已被禁止，请联系管理员"]);
+      send([h("quote", { id: session.messageId }), "本群好感度功能已被禁止，请联系管理员"]);
       return;
     }
 
@@ -69,7 +71,7 @@ export function rlp(ctx: Context,config: Config) {
       affection = -2;
       audioUrl = getRandomWavFile(path.join(wifegachaPath, "-2"));
       if(!audioUrl){
-        // session.send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
+        // send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
         return;
       }
       audioUrl = path.join(wifegachaPath, "-2", audioUrl);
@@ -77,7 +79,7 @@ export function rlp(ctx: Context,config: Config) {
       affection = -1;
       audioUrl = getRandomWavFile(path.join(wifegachaPath, "-1"));
       if(!audioUrl){
-        // session.send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
+        // send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
         return;
       }
       audioUrl = path.join(wifegachaPath, "-1", audioUrl);
@@ -85,7 +87,7 @@ export function rlp(ctx: Context,config: Config) {
       affection = 3;
       audioUrl = getRandomWavFile(path.join(wifegachaPath, "+3"));
       if(!audioUrl){
-        // session.send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
+        // send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
         return;
       }
       audioUrl = path.join(wifegachaPath, "+3", audioUrl);
@@ -93,7 +95,7 @@ export function rlp(ctx: Context,config: Config) {
       affection = 2;
       audioUrl = getRandomWavFile(path.join(wifegachaPath, "+2"));
       if(!audioUrl){
-        // session.send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
+        // send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
         return;
       }
       audioUrl = path.join(wifegachaPath, "+2", audioUrl);
@@ -101,7 +103,7 @@ export function rlp(ctx: Context,config: Config) {
       affection = 1;
       audioUrl = getRandomWavFile(path.join(wifegachaPath, "+1"));
       if(!audioUrl){
-        // session.send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
+        // send([h("quote", { id: session.messageId }), "没有找到老婆语音文件"]);
         return;
       }
       audioUrl = path.join(wifegachaPath, "+1", audioUrl);
@@ -154,7 +156,7 @@ export function rlp(ctx: Context,config: Config) {
           }, {
             groupData: groupWifeData
           });
-          session.send([
+          send([
             h("quote", { id: session.messageId }),
             `${userData.wifeName}好感度${affection > 0 ? "+" : ""}${affection}\n${config.fuckWifeDetailedReply ? `当前好感度：${userData.wifeHistories.find(item => item.wifeName === wifeName)?.affection}\n当前好感等级：${userData.wifeHistories.find(item => item.wifeName === wifeName)?.affectionLevel}\n每级好感度会影响被牛老婆成功率` : ""}`,
             audioUrl&&config.fuckWifeVoiceReply?h.audio(pathToFileURL(path.resolve(audioUrl)).href):""
@@ -210,7 +212,7 @@ export function rlp(ctx: Context,config: Config) {
           }, {
             groupData: groupWifeData
           });
-          session.send([
+          send([
             h("quote", { id: session.messageId }),
             `${userData.wifeName}好感度${affection > 0 ? "+" : ""}${affection}\n${config.fuckWifeDetailedReply ? `当前好感度：${userData.wifeHistories.find(item => item.wifeName === wifeName)?.affection}\n当前好感等级：${userData.wifeHistories.find(item => item.wifeName === wifeName)?.affectionLevel}\n每级好感度会影响被牛老婆成功率` : ""}`,
             audioUrl&&config.fuckWifeVoiceReply?h.audio(pathToFileURL(path.resolve(audioUrl)).href):""
@@ -218,12 +220,12 @@ export function rlp(ctx: Context,config: Config) {
           }else{
             const minutes = Math.floor((config.fuckWifeCoolingTime - diffSeconds)/60);
             const seconds = (config.fuckWifeCoolingTime - diffSeconds)%60;
-            session.send([h("quote", { id: session.messageId }), `好感度冷却中，剩余冷却${minutes}分${seconds}秒`]);
+            send([h("quote", { id: session.messageId }), `好感度冷却中，剩余冷却${minutes}分${seconds}秒`]);
           }
         }
     }
     else{
-      session.send([h("quote", { id: session.messageId }), "你还没有老婆"]);
+      send([h("quote", { id: session.messageId }), "你还没有老婆"]);
     }
   })
 }
