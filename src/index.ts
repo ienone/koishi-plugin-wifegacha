@@ -5,6 +5,7 @@ import { module } from "./module";
 import { createWifeData } from "./utils/createWifeData";
 import command from "./command";
 import sprit from "./utils/sprit";
+import { runDatabaseMigrations } from "./utils/migrations";
 import type { Config } from "./config";
 import { ConfigSchema } from "./config";
 
@@ -29,6 +30,7 @@ export async function apply(ctx: Context, config: Config) {
     ctx.logger.info("wifeData表中没有数据,开始初始化");
     createWifeData(ctx, config);
   }
+  await runDatabaseMigrations(ctx);
   command.clp(ctx, config);
   command.nlp(ctx, config);
   command.chalp(ctx, config);

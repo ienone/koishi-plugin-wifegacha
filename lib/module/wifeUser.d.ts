@@ -8,8 +8,12 @@ export interface WifeUser {
     operationDate: Date;
     ntrOrdinal: number;
     fuckWifeDate: Date;
+    kissWifeDate: Date;
+    dateWifeDate: Date;
     lpdaDate: Date;
     divorceDate: Date;
+    affectionDecayDate: Date;
+    drawBanUntil: Date;
     wifeHistories: Array<{
         wifeName: string;
         getWifeDate: Date;
@@ -20,6 +24,14 @@ export interface WifeUser {
         divorceCount: number;
         affection: number;
         affectionLevel: number;
+        interactionLogs?: Array<{
+            action: string;
+            delta: number;
+            event: string;
+            time: string;
+        }>;
+        lastCurrentAt?: Date;
+        leftCurrentAt?: Date;
     }>;
     interactionWithOtherUser: Array<{
         otherUserId: string;
@@ -36,6 +48,8 @@ export interface WifeUser {
     exchangeCount: number;
     divorceCount: number;
     totalAffection: number;
+    currentWifeAffection: number;
+    maxAffection: number;
     targetNtrCount: number;
     targetNtrSuccessCount: number;
 }
