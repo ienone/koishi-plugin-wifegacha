@@ -37,6 +37,7 @@ export async function upWifeData(ctx: Context,config:Config) {
       await ctx.database.set('wifeData', { name: wifeName }, {
         comeFrom: comeFrom,
         filepath: path.join(wifegachaPath, file),
+        updatedAt: new Date(),
       })
       continue;
     }
@@ -47,6 +48,7 @@ export async function upWifeData(ctx: Context,config:Config) {
       comeFrom: comeFrom,
       filepath: path.join(wifegachaPath, file),
       createdAt: new Date(),
+      updatedAt: new Date(),
       groupData: []
     })
   }
@@ -60,6 +62,7 @@ export async function upWifeData(ctx: Context,config:Config) {
     }
   }
   ctx.logger.info('wifeData表更新完成')
-  sprit.generateThumbnails(ctx)
+  await sprit.generateThumbnails(ctx)
+  sprit.clearAlbumCache()
 
 }

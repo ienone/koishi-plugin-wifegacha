@@ -33,10 +33,12 @@ export function createWifeData(ctx: Context,config:Config) {
       comeFrom: comeFrom,
       filepath: path.join(wifegachaPath, file),
       createdAt: new Date(),
+      updatedAt: new Date(),
       groupData: []
     })
   }
   ctx.logger.info('wifeData表初始化完成')
   sprit.generateThumbnails(ctx)
+  sprit.clearAlbumCache()
 
 }
