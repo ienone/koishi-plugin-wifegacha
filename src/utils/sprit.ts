@@ -61,6 +61,20 @@ function outputName(file: string) {
   return `${path.parse(file).name}.png`;
 }
 
+function pruneUntrackedThumbs(dirs: string[], liveOutputs: Set<string>) {
+  let removed = 0;
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      if (!/\.(png|jpe?g)$/i.test(file)) continue;
+      if (liveOutputs.has(file)) continue;
+      fs.unlinkSync(path.join(dir, file));
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
 function baseNameFromThumb(file: string, config: Config) {
   return path.parse(file).name.split(config.wifeNameSeparator)[1] ?? path.parse(file).name;
 }
@@ -94,6 +108,7 @@ async function generateThumbnails(ctx: Context, options: {
   const manifest = readManifest();
   const files = fs.existsSync(inDir) ? fs.readdirSync(inDir).filter((name) => /\.(png|jpe?g)$/i.test(name)).sort() : [];
   const live = new Set(files);
+  const liveOutputs = new Set(files.map(outputName));
   let updated = 0;
 
   for (const oldFile of Object.keys(manifest)) {
@@ -106,6 +121,7 @@ async function generateThumbnails(ctx: Context, options: {
       updated += 1;
     }
   }
+  updated += pruneUntrackedThumbs([colDir, grayOutDir], liveOutputs);
 
   for (const file of files) {
     const inputPath = path.join(inDir, file);

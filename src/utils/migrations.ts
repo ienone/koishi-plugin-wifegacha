@@ -36,10 +36,24 @@ async function setStoredSchemaVersion(ctx: Context, version: string) {
   }
 }
 
+function toDate(value: unknown, fallback: Date) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return fallback;
+}
+
 async function migrateTo150(ctx: Context) {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
   const users = await ctx.database.get("wifeUser", {});
   for (const user of users) {
     normalizeWifeUser(user);
+    user.fuckWifeDate = toDate(user.fuckWifeDate, yesterday);
+    user.kissWifeDate = toDate(user.kissWifeDate, yesterday);
+    user.dateWifeDate = toDate(user.dateWifeDate, yesterday);
     await ctx.database.set("wifeUser", { userId: user.userId, groupId: user.groupId }, {
       wifeName: user.wifeName,
       operationDate: user.operationDate,
