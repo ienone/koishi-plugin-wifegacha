@@ -2,270 +2,73 @@ import { Context, h } from "koishi";
 import type { Config } from "../config";
 import utils from "../utils";
 import { createRecallSender } from "../utils/messageRecall";
+import { findWifeHistory, formatAffectionLevel, normalizeWifeUser, persistWifeUser, settleAffectionDecay } from "../utils/affection";
+
+function parseAt(input?: string) {
+  return input?.match(/<at id="(\d+)"\s*\/>/)?.[1];
+}
+
+async function sendUserArchive(ctx: Context, config: Config, session, userId?: string) {
+  const send = createRecallSender(session, ctx, config, "userArchive");
+  const targetId = parseAt(userId) ?? session.userId;
+  if (targetId === session.userId) await utils.createUserData(ctx, session);
+  else await utils.createTarget(ctx, session, targetId);
+
+  const user = (await ctx.database.get("wifeUser", {
+    userId: targetId,
+    groupId: session.channelId.toString(),
+  }))[0];
+  normalizeWifeUser(user);
+  settleAffectionDecay(user);
+  await persistWifeUser(ctx, user);
+
+  const wifeCount = (await ctx.database.get("wifeData", {})).length;
+  const current = user.wifeName ? findWifeHistory(user, user.wifeName) : undefined;
+  const successRate = user.ntrTotalCount > 0 ? `${Math.floor((user.ntrSuccessCount / user.ntrTotalCount) * 100)}%` : "0%";
+  const owner = targetId === session.userId ? "个人档案" : "目标用户档案";
+
+  await send([h("quote", { id: session.messageId }), [
+    `${owner}：`,
+    `老婆收集进度：${user.wifeHistories.length}/${wifeCount}`,
+    `当前老婆：${user.wifeName || "无"}`,
+    `当前好感度：${current?.affection ?? 0}`,
+    `好感等级：${formatAffectionLevel(current?.affectionLevel ?? 0)}`,
+    `最高好感度：${user.maxAffection ?? 0}`,
+    `抽取次数：${user.drawCount ?? 0}`,
+    `离婚次数：${user.divorceCount ?? 0}`,
+    `交换次数：${user.exchangeCount ?? 0}`,
+    `牛老婆次数：${user.ntrTotalCount ?? 0}`,
+    `牛老婆成功率：${successRate}`,
+    `被牛次数：${user.targetNtrCount ?? 0}`,
+    `被牛成功次数：${user.targetNtrSuccessCount ?? 0}`,
+    `总好感度：${user.totalAffection ?? 0}`,
+  ].join("\n")]);
+}
+
+async function sendGroupArchive(ctx: Context, config: Config, session) {
+  const send = createRecallSender(session, ctx, config, "userArchive");
+  await utils.createGroupData(ctx, session);
+  const group = (await ctx.database.get("groupData", { groupId: session.channelId.toString() }))[0];
+  const successRate = group.ntrTotalCount > 0 ? `${Math.floor((group.ntrSuccessCount / group.ntrTotalCount) * 100)}%` : "0%";
+  await send([h("quote", { id: session.messageId }), [
+    "群档案：",
+    `群总抽取：${group.drawCount ?? 0}`,
+    `总牛：${group.ntrTotalCount ?? 0}`,
+    `牛成功率：${successRate}`,
+    `总离婚：${group.divorceTotalCount ?? 0}`,
+    `总交换：${group.exchangeCount ?? 0}`,
+    `总互动次数：${group.fuckTotalCount ?? 0}`,
+  ].join("\n")]);
+}
 
 export function yhda(ctx: Context, config: Config) {
-  ctx
-    .command("用户档案 [userId] 查看用户档案")
-    .action(async ({ session }, userId) => {
-        const send = createRecallSender(session, ctx, config, "userArchive");
-      if (ctx.config.blockGroup.includes(session.channelId.toString())) {
-        return;
-      }
-      // 查看是否关闭了某些功能
-      // 离婚功能
-      let divorceSwitchgear = true;
-      if (!config.divorceSwitchgear) {
-        divorceSwitchgear = false;
-      }
-      if (config.divorceBlockGroup.includes(session.channelId.toString())) {
-        divorceSwitchgear = false;
-      }
-      // 日老婆功能
-      let fuckWifeSwitchgear = true;
-      if (!config.fuckWifeSwitchgear) {
-        fuckWifeSwitchgear = false;
-      }
-      if (config.fuckWifeBlockGroup.includes(session.channelId.toString())) {
-        fuckWifeSwitchgear = false;
-      }
-      // 牛老婆功能
-      let ntrSwitchgear = true;
-      if (!config.ntrSwitchgear) {
-        ntrSwitchgear = false;
-      }
-      if (config.ntrBlockGroup.includes(session.channelId.toString())) {
-        ntrSwitchgear = false;
-      }
-      // 创建用户数据
-      await utils.createUserData(ctx, session);
-      // 创建群数据
-      await utils.createGroupData(ctx, session);
-      // 获取用户数据
-      const wifeUser = (
-        await ctx.database.get("wifeUser", {
-          userId: session.userId,
-          groupId: session.channelId.toString(),
-        })
-      )[0];
-      // 获取群数据
-      const groupData = (
-        await ctx.database.get("groupData", {
-          groupId: session.channelId.toString(),
-        })
-      )[0];
-      // 获取老婆总数
-      const wifeDataNum = (await ctx.database.get("wifeData", {})).length;
-      const now = new Date().getTime();
-      const diffTime = Math.abs(now - wifeUser.lpdaDate.getTime());
-      const diffSeconds = Math.floor(diffTime / 1000);
-      if (diffSeconds < config.lpdaDateInterval) {
-        const minutes = Math.floor(
-          (config.lpdaDateInterval - diffSeconds) / 60
-        );
-        const seconds = (config.lpdaDateInterval - diffSeconds) % 60;
-        send([
-          h("quote", { id: session.messageId }),
-          `档案查询冷却中，${minutes}分${seconds}秒后可以再次查询`,
-        ]);
-        return;
-      }
-      // 更新用户档案查询时间
-      await ctx.database.set(
-        "wifeUser",
-        {
-          userId: session.userId,
-          groupId: session.channelId.toString(),
-        },
-        {
-          lpdaDate: new Date(),
-        }
-      );
-      // 获取老婆历史记录数量
-      if (userId) {
-        userId = userId.match(/<at id="(\d+)"\s*\/>/)?.[1];
-        // 创建目标用户数据
-        await utils.createTarget(ctx, session, userId);
-        // 获取目标用户数据
-        const targetwifeUser = (
-          await ctx.database.get("wifeUser", {
-            userId: userId,
-            groupId: session.channelId.toString(),
-          })
-        )[0];
-        // 创建目标用户与当前用户交互数据
-        await utils.createInteraction(ctx, session, userId);
-        // 获取目标的老婆历史记录数量
-        const wifeHistoriesNum = targetwifeUser.wifeHistories.length;
-        // 获取目抽老婆次数
-        const drawCount = targetwifeUser.drawCount;
-        // 获取目标牛老婆总次数
-        const ntrTotalCount = targetwifeUser.ntrTotalCount;
-        // 获取目标牛老婆成功次数
-        const ntrSuccessCount = targetwifeUser.ntrSuccessCount;
-        // 获取目标离婚次数
-        const divorceCount = targetwifeUser.divorceCount;
-        // 获取目标交换次数
-        const exchangeCount = targetwifeUser.exchangeCount;
-        // 获取目标老婆总好感度
-        const totalAffection = targetwifeUser.totalAffection;
-        // 获取目标被牛次数
-        const targetNtrCount = targetwifeUser.targetNtrCount;
-        // 获取目标被牛成功次数
-        const targetNtrSuccessCount = targetwifeUser.targetNtrSuccessCount;
-        // 获取与他人交互数据
-        const interactionWithOtherUser = targetwifeUser.interactionWithOtherUser;
-        let interactionFlag = false;
-        // 获取交互数据中牛老婆最多的用户id和次数
-        let maxNtrCountUser = "";
-        let maxNtrCount = 0;
-        // 获取交互数据中牛老婆成功最多的用户id和次数
-        let maxNtrSuccessCountUser = "";
-        let maxNtrSuccessCount = 0;
-        // 获取交互数据中交换最多的用户id和次数
-        let maxExchangeCountUser = "";
-        let maxExchangeCount = 0;
-        if (interactionWithOtherUser.length > 0) {
-          interactionFlag = true;
-          for (const item of interactionWithOtherUser) {
-            if (item.ntrCount > maxNtrCount) {
-              maxNtrCount = item.ntrCount;
-              maxNtrCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-            if (item.ntrSuccessCount >= maxNtrSuccessCount) {
-              maxNtrSuccessCount = item.ntrSuccessCount;
-              maxNtrSuccessCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-            if (item.exchangeCount >= maxExchangeCount) {
-              maxExchangeCount = item.exchangeCount;
-              maxExchangeCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-          }
-        }
+  ctx.command("用户档案 [userId]", "查看自己或被 @ 群友在当前群的个人老婆档案").action(async ({ session }, userId) => {
+    if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
+    await sendUserArchive(ctx, config, session, userId);
+  });
 
-        send([
-          h("quote", { id: session.messageId }),
-          `- 目标用户档案：\n`,
-          `- 老婆收集进度：${wifeHistoriesNum}/${wifeDataNum}\n`,
-          `${drawCount ? `- 抽老婆次数：${drawCount}\n` : ""}`,
-          `${ntrSwitchgear&&ntrTotalCount ? `- 牛老婆总次数：${ntrTotalCount}\n` : ""}`,
-          `${ntrSwitchgear&&ntrSuccessCount ? `- 牛老婆成功次数：${ntrSuccessCount}\n` : ""}`,
-          `${
-            ntrSwitchgear&&ntrTotalCount
-              ? `- 牛老婆成功率：${Math.floor(
-                  (ntrSuccessCount / ntrTotalCount) * 100
-                )}%\n`
-              : ""
-          }`,
-          `${divorceSwitchgear&&divorceCount ? `- 离婚次数：${divorceCount}\n` : ""}`,
-          `${exchangeCount&&exchangeCount ? `- 交换次数：${exchangeCount}\n` : ""}`,
-          `${fuckWifeSwitchgear&&totalAffection ? `- 老婆总好感度：${totalAffection}\n` : ""}`,
-          `${ntrSwitchgear&&targetNtrCount ? `- 被牛次数：${targetNtrCount}\n` : ""}`,
-          `${
-            ntrSwitchgear&&targetNtrSuccessCount ? `- 被牛成功次数：${targetNtrSuccessCount}\n` : ""
-          }`,
-        ]);
-      } else {
-        // 获取个人的老婆历史记录数量
-        const wifeHistoriesNum = wifeUser.wifeHistories.length;
-        // 获取个人抽老婆次数
-        const drawCount = wifeUser.drawCount;
-        // 获取个人牛老婆总次数
-        const ntrTotalCount = wifeUser.ntrTotalCount;
-        // 获取个人牛老婆成功次数
-        const ntrSuccessCount = wifeUser.ntrSuccessCount;
-        // 获取个人离婚次数
-        const divorceCount = wifeUser.divorceCount;
-        // 获取个人交换次数
-        const exchangeCount = wifeUser.exchangeCount;
-        // 获取个人老婆总好感度
-        const totalAffection = wifeUser.totalAffection;
-        // 获取个人被牛次数
-        const targetNtrCount = wifeUser.targetNtrCount;
-        // 获取个人被牛成功次数
-        const targetNtrSuccessCount = wifeUser.targetNtrSuccessCount;
-        // 获取群数据
-        // 群总抽老婆次数
-        const groupDrawCount = groupData.drawCount;
-        // 群总牛老婆次数
-        const groupNtrCount = groupData.ntrTotalCount;
-        // 群总牛老婆成功次数
-        const groupNtrSuccessCount = groupData.ntrSuccessCount;
-        // 群总离婚次数
-        const groupDivorceCount = groupData.divorceTotalCount;
-        // 群总交换次数
-        const groupExchangeCount = groupData.exchangeCount;
-        // 群总日老婆次数
-        const groupFuckCount = groupData.fuckTotalCount;
-        // 获取与他人交互数据
-        const interactionWithOtherUser = wifeUser.interactionWithOtherUser;
-        let interactionFlag = false;
-        // 获取交互数据中牛老婆最多的用户id和次数
-        let maxNtrCountUser = "";
-        let maxNtrCount = 0;
-        // 获取交互数据中牛老婆成功最多的用户id和次数
-        let maxNtrSuccessCountUser = "";
-        let maxNtrSuccessCount = 0;
-        // 获取交互数据中交换最多的用户id和次数
-        let maxExchangeCountUser = "";
-        let maxExchangeCount = 0;
-        if (interactionWithOtherUser.length > 0) {
-          interactionFlag = true;
-          for (const item of interactionWithOtherUser) {
-            if (item.ntrCount > maxNtrCount) {
-              maxNtrCount = item.ntrCount;
-              maxNtrCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-            if (item.ntrSuccessCount >= maxNtrSuccessCount) {
-              maxNtrSuccessCount = item.ntrSuccessCount;
-              maxNtrSuccessCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-            if (item.exchangeCount >= maxExchangeCount) {
-              maxExchangeCount = item.exchangeCount;
-              maxExchangeCountUser = (await session.bot.getUser(item.otherUserId)).name;
-            }
-          }
-        }
-        send([
-          h("quote", { id: session.messageId }),
-          `- 群档案：\n`,
-          `${groupDrawCount ? `- 群总抽老婆次数：${groupDrawCount}\n` : ""}`,
-          `${ntrSwitchgear&&groupNtrCount ? `- 群总牛老婆次数：${groupNtrCount}\n` : ""}`,
-          `${
-            ntrSwitchgear&&groupNtrSuccessCount
-              ? `- 群总牛老婆成功次数：${groupNtrSuccessCount}\n`
-              : ""
-          }`,
-          `${
-            divorceSwitchgear&&groupDivorceCount ? `- 群总离婚次数：${groupDivorceCount}\n` : ""
-          }`,
-          `${groupExchangeCount&&groupExchangeCount ? `- 群总交换次数：${groupExchangeCount}\n` : ""}`,
-          `${
-            fuckWifeSwitchgear&&groupFuckCount ? `- 群老婆总好感度：${groupFuckCount}\n` : ""
-          }`,
-          `---------------\n`,
-          `- 个人档案：\n`,
-          `- 老婆收集进度：${wifeHistoriesNum}/${wifeDataNum}\n`,
-          `${drawCount ? `- 抽老婆次数：${drawCount}\n` : ""}`,
-          `${ntrSwitchgear&&ntrTotalCount ? `- 牛老婆总次数：${ntrTotalCount}\n` : ""}`,
-          `${ntrSwitchgear&&ntrSuccessCount ? `- 牛老婆成功次数：${ntrSuccessCount}\n` : ""}`,
-          `${
-            ntrSwitchgear&&ntrTotalCount
-              ? `- 牛老婆成功率：${Math.floor(
-                  (ntrSuccessCount / ntrTotalCount) * 100
-                )}%\n`
-              : ""
-          }`,
-          `${divorceSwitchgear&&divorceCount ? `- 离婚次数：${divorceCount}\n` : ""}`,
-          `${exchangeCount&&exchangeCount ? `- 交换次数：${exchangeCount}\n` : ""}`,
-          `${fuckWifeSwitchgear&&totalAffection ? `- 老婆总好感度：${totalAffection}\n` : ""}`,
-          `${ntrSwitchgear&&targetNtrCount ? `- 被牛次数：${targetNtrCount}\n` : ""}`,
-          `${
-            ntrSwitchgear&&targetNtrSuccessCount ? `- 被牛成功次数：${targetNtrSuccessCount}\n` : ""
-          }`,
-          `${interactionFlag&&maxNtrCount ? `- 最喜欢牛的是${maxNtrCountUser}，共${maxNtrCount}次\n` : ""}`,
-          `${interactionFlag&&maxNtrSuccessCount ? `- 牛成功最多的是${maxNtrSuccessCountUser}，共${maxNtrSuccessCount}次\n` : ""}`,
-          `${interactionFlag&&maxExchangeCount ? `- 和${maxExchangeCountUser}交换老婆次数最多，共${maxExchangeCount}次\n` : ""}`,
-        ]);
-      }
-    });
+  ctx.command("群档案", "查看当前群的抽取、牛老婆、离婚、交换、互动聚合统计").action(async ({ session }) => {
+    if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
+    await sendGroupArchive(ctx, config, session);
+  });
 }

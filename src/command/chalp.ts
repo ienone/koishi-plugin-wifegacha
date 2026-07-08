@@ -3,66 +3,52 @@ import { pathToFileURL } from "url";
 import type { Config } from "../config";
 import utils from "../utils";
 import { createRecallSender } from "../utils/messageRecall";
+import { findWifeHistory, formatAffectionLevel, formatCooldown, normalizeWifeUser, persistWifeUser, settleAffectionDecay } from "../utils/affection";
+
+function parseAt(input?: string) {
+  return input?.match(/<at id="(\d+)"\s*\/>/)?.[1];
+}
 
 export function chalp(ctx: Context, config: Config) {
-  ctx.command("查老婆 [userId] 查看个人老婆或指定群友老婆").action(async ({ session }, userId) => {
-        const send = createRecallSender(session, ctx, config, "query");
-    if (ctx.config.blockGroup.includes(session.channelId.toString())) {
-      return;
-    }
-   if (userId && userId.match(/<at id="(\d+)"\s*\/>/)?.[1]){
-    await utils.createTarget(ctx, session, userId?.match(/<at id="(\d+)"\s*\/>/)?.[1])
-    const targetData = (await ctx.database.get("wifeUser", {
-      userId: userId?.match(/<at id="(\d+)"\s*\/>/)?.[1],
+  ctx.command("查老婆 [userId]", "查看自己或被 @ 群友的当前老婆、来源、好感度和冷却信息").action(async ({ session }, userId) => {
+    const send = createRecallSender(session, ctx, config, "query");
+    if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
+
+    const targetId = parseAt(userId) ?? session.userId;
+    if (targetId === session.userId) await utils.createUserData(ctx, session);
+    else await utils.createTarget(ctx, session, targetId);
+
+    const userData = (await ctx.database.get("wifeUser", {
+      userId: targetId,
       groupId: session.channelId.toString(),
-    }))[0]
-    // ctx.logger.info(targetData)
-    if (targetData.wifeName === '') {
-      send([
-        h("quote", { id: session.messageId }),
-        `对方还没有老婆`,
-      ]);
-    }
-    else {
-      const imageBuffer = await utils.readImageAsBinarySync((await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].filepath);
-      send([
-        h("quote", { id: session.messageId }),
-        `对方的老婆是 ${targetData.wifeName} ${
-          (await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].comeFrom ? `，来自《${(await ctx.database.get("wifeData", { name: targetData.wifeName }))[0].comeFrom}》` : ""
-        }`,
-        h.image(imageBuffer, "image/png"),
-      ]);
-    }
-   }
-   else {
-    await utils.createUserData(ctx, session)
-    const userData = (
-      await ctx.database.get("wifeUser", {
-        userId: session.userId,
-        groupId: session.channelId.toString(),
-      })
-    )[0];
-    if (userData.wifeName) {
-      const wifeImage = (
-        await ctx.database.get("wifeData", { name: userData.wifeName })
-      )[0].filepath;
-      const comeFrom = (
-        await ctx.database.get("wifeData", { name: userData.wifeName })
-      )[0].comeFrom;
-      send([
-        h("quote", { id: session.messageId }),
-        `你的老婆是 ${userData.wifeName} ${
-          comeFrom ? `，来自《${comeFrom}》` : ""
-        }`,
-        h.image(pathToFileURL(wifeImage).href),
-      ]);
+    }))[0];
+    normalizeWifeUser(userData);
+    settleAffectionDecay(userData);
+    await persistWifeUser(ctx, userData);
+
+    if (!userData.wifeName) {
+      await send([h("quote", { id: session.messageId }), targetId === session.userId ? "你还没有老婆，快去抽一个吧" : "对方还没有老婆"]);
       return;
-    } else {
-      send([
-        h("quote", { id: session.messageId }),
-        `你还没有老婆，快去抽一个吧`,
-      ]);
     }
-   }
+
+    const wife = (await ctx.database.get("wifeData", { name: userData.wifeName }))[0];
+    const history = findWifeHistory(userData, userData.wifeName);
+    const owner = targetId === session.userId ? "你的" : "对方的";
+    const lines = [
+      `${owner}老婆：${userData.wifeName}`,
+      wife?.comeFrom ? `来源：${wife.comeFrom}` : "来源：未记录",
+      `当前好感度：${history?.affection ?? userData.currentWifeAffection ?? 0}`,
+      `好感等级：${formatAffectionLevel(history?.affectionLevel ?? 0)}`,
+      "冷却剩余：",
+      `- 日老婆：${formatCooldown(userData.fuckWifeDate, config.fuckWifeCoolingTime)}`,
+      `- 亲老婆/亲亲：${formatCooldown(userData.kissWifeDate, config.kissWifeCoolingTime)}`,
+      `- 约会：${formatCooldown(userData.dateWifeDate, config.dateWifeCoolingTime)}`,
+      `- 离婚：${formatCooldown(userData.divorceDate, config.divorceDateInterval)}`,
+      `- 档案查询：${formatCooldown(userData.lpdaDate, config.lpdaDateInterval)}`,
+    ];
+
+    const payload: any[] = [h("quote", { id: session.messageId }), lines.join("\n")];
+    if (wife?.filepath) payload.push(h.image(pathToFileURL(wife.filepath).href));
+    await send(payload);
   });
 }
