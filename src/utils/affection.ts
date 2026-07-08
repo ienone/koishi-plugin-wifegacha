@@ -187,7 +187,7 @@ export function settleAffectionDecay(user: WifeUser, now = new Date()) {
   }
   user.affectionDecayDate = now;
   syncCurrentAffection(user);
-  return changed;
+  return changed || elapsedDays > 0;
 }
 
 export function affectionLevel(affection: number) {

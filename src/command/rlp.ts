@@ -8,10 +8,10 @@ import {
   formatAffectionLevel,
   normalizeWifeUser,
   persistWifeUser,
-  randomAffectionEvent,
   rollAffectionDelta,
   settleAffectionDecay,
 } from "../utils/affection";
+import { rollAffectionEvent } from "../utils/affectionEvents";
 
 function actionTitle(action: "fuck" | "kiss" | "date") {
   if (action === "kiss") return "亲老婆";
@@ -62,7 +62,7 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
     groupId: session.channelId.toString(),
   }))[0];
   normalizeWifeUser(userData);
-  settleAffectionDecay(userData);
+  const decayChanged = settleAffectionDecay(userData);
 
   if (!userData.wifeName) {
     await persistWifeUser(ctx, userData);
@@ -75,6 +75,7 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
   const last = userData[cooldownField] as Date;
   const diffSeconds = Math.floor((Date.now() - last.getTime()) / 1000);
   if (diffSeconds < cooldown) {
+    if (decayChanged) await persistWifeUser(ctx, userData);
     const remain = cooldown - diffSeconds;
     await send([h("quote", { id: session.messageId }), `${actionTitle(action)}冷却中，剩余 ${Math.floor(remain / 60)}分${remain % 60}秒`]);
     return;
@@ -82,10 +83,15 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
 
   const wifeName = userData.wifeName;
   let delta = rollAffectionDelta(userData, wifeName, action);
-  const event = randomAffectionEvent(action, delta);
+  const rolledEvent = rollAffectionEvent(config, action, delta);
+  delta = rolledEvent.delta;
+  const event = rolledEvent.message;
 
-  const catastrophic = Boolean(config.affectionCatastropheSwitchgear)
+  const legacyCatastrophe = Boolean(config.affectionCatastropheSwitchgear)
     && Math.random() * 100 < config.affectionCatastropheProbability;
+  const eventClearsAffection = Boolean(rolledEvent.effects.clearAffection);
+  const eventLosesWife = Boolean(rolledEvent.effects.loseCurrentWife);
+  const catastrophic = legacyCatastrophe || eventClearsAffection || eventLosesWife;
   if (catastrophic) {
     delta = -(userData.currentWifeAffection ?? 0);
   }
@@ -93,8 +99,9 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
   const history = addAffection(userData, wifeName, delta, action, event);
   userData[cooldownField] = new Date();
 
-  if (catastrophic) {
-    const banUntil = new Date(Date.now() + config.affectionCatastropheBanSeconds * 1000);
+  if (legacyCatastrophe || eventLosesWife) {
+    const banSeconds = rolledEvent.effects.drawBanSeconds || config.affectionCatastropheBanSeconds;
+    const banUntil = new Date(Date.now() + banSeconds * 1000);
     userData.drawBanUntil = banUntil;
     clearCurrentWife(userData);
   }
@@ -129,9 +136,10 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
   }
 
   if (catastrophic) {
+    const banSeconds = rolledEvent.effects.drawBanSeconds || config.affectionCatastropheBanSeconds;
     await send([
       h("quote", { id: session.messageId }),
-      `${wifeName} 好感清零，并暂时离开了你。禁抽提示时长：${config.affectionCatastropheBanSeconds} 秒。`,
+      `${event}\n${wifeName} 好感清零${legacyCatastrophe || eventLosesWife ? "，并暂时离开了你" : ""}。禁抽提示时长：${legacyCatastrophe || eventLosesWife ? `${banSeconds} 秒` : "无"}。`,
     ]);
     return;
   }

@@ -31,6 +31,24 @@ export interface Config {
   affectionCatastropheSwitchgear: boolean;
   affectionCatastropheProbability: number;
   affectionCatastropheBanSeconds: number;
+  affectionEventSwitchgear: boolean;
+  affectionEventProbability: number;
+  affectionEventHeavyProbability: number;
+  affectionEventPreset: "balanced" | "light" | "chaos";
+  customAffectionEvents: Array<{
+    id: string;
+    enabled: boolean;
+    actions: Array<"fuck" | "kiss" | "date">;
+    weight: number;
+    deltaMode: "add" | "multiply" | "set";
+    deltaValue: number;
+    message: string;
+    heavy: boolean;
+    failAction: boolean;
+    clearAffection: boolean;
+    loseCurrentWife: boolean;
+    drawBanSeconds: number;
+  }>;
 
   wifeAllOperationGroup: string[];
   wifeUploadGroup: string[];
@@ -141,6 +159,54 @@ export const ConfigSchema: Schema<Config> = Schema.intersect([
     affectionCatastropheBanSeconds: Schema.number()
       .default(3600)
       .description("好感重事件后的禁抽提示时间，单位秒，默认 3600。影响 抽老婆。"),
+    affectionEventSwitchgear: Schema.boolean()
+      .default(true)
+      .description("是否启用好感互动彩蛋事件。影响 日老婆、亲老婆/亲亲、约会。"),
+    affectionEventProbability: Schema.number()
+      .default(35)
+      .min(0)
+      .max(100)
+      .step(1)
+      .description("每次好感互动触发普通彩蛋事件的概率，单位百分比，默认 35。"),
+    affectionEventHeavyProbability: Schema.number()
+      .default(1)
+      .min(0)
+      .max(100)
+      .step(0.1)
+      .description("彩蛋池中允许重事件进入抽取的概率，单位百分比，默认 1。重事件可能导致失败、清零、失去当前老婆或禁抽。"),
+    affectionEventPreset: Schema.union([
+      Schema.const("balanced").description("标准：正负事件都有，重事件受独立概率限制"),
+      Schema.const("light").description("温和：过滤重事件和高惩罚事件"),
+      Schema.const("chaos").description("混沌：使用完整事件池，适合娱乐群"),
+    ])
+      .role("radio")
+      .default("balanced")
+      .description("好感彩蛋预设。"),
+    customAffectionEvents: Schema.array(Schema.object({
+      id: Schema.string().required().description("事件 ID，建议使用英文或拼音，不能重复"),
+      enabled: Schema.boolean().default(true).description("是否启用该自定义事件"),
+      actions: Schema.array(Schema.union([
+        Schema.const("fuck").description("日老婆"),
+        Schema.const("kiss").description("亲老婆/亲亲"),
+        Schema.const("date").description("约会"),
+      ])).default([]).description("该事件可触发的命令"),
+      weight: Schema.number().default(1).min(0).description("事件权重，越高越容易被抽中"),
+      deltaMode: Schema.union([
+        Schema.const("add").description("在原好感变化上加减 deltaValue"),
+        Schema.const("multiply").description("把原好感变化乘以 deltaValue"),
+        Schema.const("set").description("把好感变化直接设为 deltaValue"),
+      ]).default("add").description("好感变化计算方式"),
+      deltaValue: Schema.number().default(0).description("好感变化参数，含义由 deltaMode 决定"),
+      message: Schema.string().required().description("触发后展示给用户的事件文案"),
+      heavy: Schema.boolean().default(false).description("是否为重事件；重事件还会受重事件概率限制"),
+      failAction: Schema.boolean().default(false).description("是否让本次互动失败并把好感变化设为 0"),
+      clearAffection: Schema.boolean().default(false).description("是否清空当前老婆好感度"),
+      loseCurrentWife: Schema.boolean().default(false).description("是否失去当前老婆"),
+      drawBanSeconds: Schema.number().default(0).description("触发后禁抽秒数；0 表示使用重事件默认禁抽时间"),
+    }))
+      .role("table")
+      .default([])
+      .description("自定义好感彩蛋事件。留空时使用内置事件池。"),
   }).description("好感互动设置"),
 
   Schema.object({

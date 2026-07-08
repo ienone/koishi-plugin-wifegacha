@@ -26,6 +26,24 @@ export interface Config {
     affectionCatastropheSwitchgear: boolean;
     affectionCatastropheProbability: number;
     affectionCatastropheBanSeconds: number;
+    affectionEventSwitchgear: boolean;
+    affectionEventProbability: number;
+    affectionEventHeavyProbability: number;
+    affectionEventPreset: "balanced" | "light" | "chaos";
+    customAffectionEvents: Array<{
+        id: string;
+        enabled: boolean;
+        actions: Array<"fuck" | "kiss" | "date">;
+        weight: number;
+        deltaMode: "add" | "multiply" | "set";
+        deltaValue: number;
+        message: string;
+        heavy: boolean;
+        failAction: boolean;
+        clearAffection: boolean;
+        loseCurrentWife: boolean;
+        drawBanSeconds: number;
+    }>;
     wifeAllOperationGroup: string[];
     wifeUploadGroup: string[];
     wifeUpdateGroup: string[];
