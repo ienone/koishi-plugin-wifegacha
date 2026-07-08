@@ -1,7 +1,7 @@
 {
-  "name": "koishi-plugin-wifegacha-enhanced",
-  "description": "增强版抽老婆插件，新增消息撤回开关、图鉴智能生成等功能。",
-  "version": "1.5.0",
+  "name": "koishi-plugin-wifegacha-next",
+  "description": "可持续维护版抽老婆 Koishi 插件，包含图鉴优化、好感度系统、群内档案与消息撤回等增强功能。",
+  "version": "1.6.0",
   "main": "lib/index.js",
   "contributors": [
     "Bocchi2b <bocchi2b@qq.com>"
