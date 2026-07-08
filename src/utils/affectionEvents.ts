@@ -48,19 +48,8 @@ function pick<T extends { weight: number }>(items: T[]) {
   return items[items.length - 1];
 }
 
-function defaultMessage(action: AffectionInteractionAction, delta: number) {
-  const good = action === "date"
-    ? ["餐厅很合口味，她一整晚都很开心。", "电影选得不错，你们聊了很久。", "一起买到了她喜欢的谷子，她明显更黏你了。"]
-    : action === "kiss"
-      ? ["她有点害羞，但还是轻轻回应了你。", "距离感刚刚好，她看起来心情不错。", "这个亲亲时机很好，她没有躲开。"]
-      : ["今天互动很顺利，她记住了这次亲近。", "气氛比平时更亲近，她的态度软化了。", "她今天心情不错，对你的印象变好了。"];
-  const bad = action === "date"
-    ? ["你迟到了，她一路上都不太高兴。", "约会安排有点踩雷，气氛冷了下来。", "天气突然变差，你们都有点狼狈。"]
-    : action === "kiss"
-      ? ["她觉得有点突然，往后退了一步。", "距离感还没到，她提醒你慢慢来。"]
-      : ["互动太频繁了，她有点累。", "时机不太好，她今天不想继续。"];
-  const pool = delta >= 0 ? good : bad;
-  return pool[Math.floor(Math.random() * pool.length)];
+function defaultMessage(_action: AffectionInteractionAction, _delta: number) {
+  return "无特殊事件。";
 }
 
 const presetRules: AffectionEventRule[] = [
@@ -99,7 +88,7 @@ const presetRules: AffectionEventRule[] = [
     weight: 1,
     deltaMode: "set",
     deltaValue: 0,
-    message: "她彻底生气了，暂时离开了你。",
+    message: "她撤回了一个同意…你完蛋了。",
     heavy: true,
     effects: { clearAffection: true, loseCurrentWife: true },
   },
@@ -110,7 +99,7 @@ const presetRules: AffectionEventRule[] = [
     weight: 4,
     deltaMode: "set",
     deltaValue: 0,
-    message: "你突然软脚了，动作执行失败，什么都没发生。",
+    message: "虾钳突然软糯，你怎么老是到关键时刻就爱发抖呢！",
     effects: { failAction: true },
   },
   {
@@ -192,7 +181,7 @@ const presetRules: AffectionEventRule[] = [
     weight: 3,
     deltaMode: "multiply",
     deltaValue: 2,
-    message: "约会时偶遇她喜欢的明星，她一整天都心情很好。",
+    message: "约会时偶遇她推的爱豆，她一整天都心情很好，但是你怎么觉得有些不对劲🤔",
   },
   {
     id: "date_late_arrival",
@@ -219,7 +208,7 @@ const presetRules: AffectionEventRule[] = [
     weight: 4,
     deltaMode: "add",
     deltaValue: -5,
-    message: "你聊到了雷区话题，气氛瞬间冷了下来。",
+    message: "你聊到了****，气氛瞬间冷了下来。",
   },
 ];
 
