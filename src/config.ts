@@ -2,55 +2,41 @@ import { Schema } from "koishi";
 import type { MessageRecallSettings } from "./utils/messageRecall";
 
 export interface Config {
-  // 屏蔽的群组
   blockGroup: string[];
-  // 牛老婆次数
-  ntrOrdinal: number;
-  // 牛老婆成功率计算方式
-  probabilityMath: number;
-  // 直接概率
-  probabilityMathDirect: number;
-  // 牛老婆总开关
-  ntrSwitchgear: boolean;
-  // 牛老婆屏蔽群组
-  ntrBlockGroup: string[];
-  // 图鉴收集是否包含牛老婆
-  illustratedBook: boolean;
-  // 离婚次数限制
-  divorceLimit: number;
-  // 离婚总开关
-  divorceSwitchgear: boolean;
-  // 离婚屏蔽群组
-  divorceBlockGroup: string[];
-  // 日老婆冷却时间
-  fuckWifeCoolingTime: number;
-  // 日老婆总开关
-  fuckWifeSwitchgear: boolean;
-  // 详细回复
-  fuckWifeDetailedReply: boolean;
-  // 语音回复
-  fuckWifeVoiceReply: boolean;
-  // 日老婆屏蔽群组
-  fuckWifeBlockGroup: string[];
-  // 老婆名称来源分隔符
-  wifeNameSeparator: string;
-  // 允许所有老婆操作权限的用户组
-  wifeAllOperationGroup: string[];
-  // 仅允许上传老婆权限的用户组
-  wifeUploadGroup: string[];
-  // 仅允许更新老婆权限的用户组
-  wifeUpdateGroup: string[];
-  // 仅允许删除老婆权限的用户组
-  wifeDeleteGroup: string[];
-  // 管理员ID
   adminId: string;
-  // 老婆图鉴质量
+  wifeNameSeparator: string;
   wifeImageQuality: number;
-  // 档案查询时间间隔
   lpdaDateInterval: number;
-  // 离婚时间间隔
+
+  ntrOrdinal: number;
+  ntrSwitchgear: boolean;
+  ntrBlockGroup: string[];
+
+  illustratedBook: boolean;
+
   divorceDateInterval: number;
-  // 消息撤回设置
+  divorceLimit: number;
+  divorceSwitchgear: boolean;
+  divorceBlockGroup: string[];
+
+  fuckWifeSwitchgear: boolean;
+  kissWifeSwitchgear: boolean;
+  dateWifeSwitchgear: boolean;
+  fuckWifeCoolingTime: number;
+  kissWifeCoolingTime: number;
+  dateWifeCoolingTime: number;
+  fuckWifeBlockGroup: string[];
+  kissWifeBlockGroup: string[];
+  dateWifeBlockGroup: string[];
+  affectionCatastropheSwitchgear: boolean;
+  affectionCatastropheProbability: number;
+  affectionCatastropheBanSeconds: number;
+
+  wifeAllOperationGroup: string[];
+  wifeUploadGroup: string[];
+  wifeUpdateGroup: string[];
+  wifeDeleteGroup: string[];
+
   messageRecall: MessageRecallSettings;
 }
 
@@ -58,110 +44,144 @@ export const ConfigSchema: Schema<Config> = Schema.intersect([
   Schema.object({
     wifeNameSeparator: Schema.string()
       .default("+")
-      .description("老婆'名称' '来源'分隔符"),
-    adminId: Schema.string().required().description("管理员ID"),
+      .description("老婆资源文件名中的来源和名称分隔符，例如 来源+名称.png。影响新增老婆、更新老婆数据、重命名老婆。"),
+    adminId: Schema.string()
+      .required()
+      .description("插件管理员用户 ID。拥有新增、更新、删除、重命名、更新老婆数据等管理命令权限。"),
     wifeImageQuality: Schema.number()
       .default(75)
       .min(50)
       .max(100)
       .step(1)
       .role("slider")
-      .description("老婆图鉴质量(50-100)"),
+      .description("老婆图鉴最终 JPG 输出质量，范围 50-100，默认 75。影响 老婆图鉴。"),
     lpdaDateInterval: Schema.number()
       .default(10)
-      .description("档案查询时间间隔(秒)"),
+      .description("档案查询冷却时间，单位秒，按用户+群分别计算，默认 10。影响 用户档案、群老婆档案。"),
     blockGroup: Schema.array(Schema.string())
       .default([])
       .collapse()
-      .description("屏蔽的群组"),
+      .description("全局屏蔽群号列表。命中的群不会响应本插件任何命令。"),
   }).description("基础设置"),
+
   Schema.object({
-    ntrOrdinal: Schema.number().default(5).description("牛老婆次数"),
-    probabilityMath: Schema.union([
-      Schema.const(0).description("直接概率"),
-      Schema.const(1).description("特定算法"),
-    ])
-      .role("radio")
-      .default(0)
-      .description("牛老婆成功率计算方式"),
-    probabilityMathDirect: Schema.number()
-      .default(50)
-      .min(0)
-      .max(100)
-      .step(1)
-      .description("直接概率(只有选择直接概率时有效)"),
-    ntrSwitchgear: Schema.boolean().default(true).description("牛老婆总开关"),
+    ntrSwitchgear: Schema.boolean()
+      .default(true)
+      .description("是否启用 牛老婆 命令。"),
+    ntrOrdinal: Schema.number()
+      .default(5)
+      .description("每个用户每天在每个群的 牛老婆 尝试次数上限，默认 5。"),
     ntrBlockGroup: Schema.array(Schema.string())
       .default([])
       .collapse()
-      .description("牛老婆屏蔽群组"),
+      .description("禁用 牛老婆 命令的群号列表。"),
   }).description("牛老婆设置"),
+
   Schema.object({
     illustratedBook: Schema.boolean()
       .default(false)
-      .description("图鉴收集是否包含牛老婆"),
+      .description("老婆图鉴是否把通过 牛老婆 获得的老婆计入收集进度。默认 false，仅统计正常抽取。"),
   }).description("图鉴设置"),
+
   Schema.object({
+    divorceSwitchgear: Schema.boolean()
+      .default(true)
+      .description("是否启用 离婚 命令。"),
     divorceDateInterval: Schema.number()
       .default(10)
-      .description("离婚时间间隔(秒)"),
-    divorceLimit: Schema.number().default(10).description("离婚次数限制"),
-    divorceSwitchgear: Schema.boolean().default(true).description("离婚总开关"),
+      .description("离婚冷却时间，单位秒，按用户+群分别计算，默认 10。影响 离婚。"),
+    divorceLimit: Schema.number()
+      .default(10)
+      .description("每个用户每天在每个群的 离婚 次数上限，默认 10。"),
     divorceBlockGroup: Schema.array(Schema.string())
       .default([])
       .collapse()
-      .description("离婚屏蔽群组"),
+      .description("禁用 离婚 命令的群号列表。"),
   }).description("离婚设置"),
+
   Schema.object({
     fuckWifeSwitchgear: Schema.boolean()
       .default(true)
-      .description("日老婆总开关"),
+      .description("是否启用 日老婆 命令。"),
+    kissWifeSwitchgear: Schema.boolean()
+      .default(true)
+      .description("是否启用 亲老婆/亲亲 命令。"),
+    dateWifeSwitchgear: Schema.boolean()
+      .default(true)
+      .description("是否启用 约会 命令。"),
     fuckWifeCoolingTime: Schema.number()
       .default(10)
-      .description("日老婆冷却时间(秒)"),
-    fuckWifeDetailedReply: Schema.boolean()
-      .default(false)
-      .description("详细回复"),
-    fuckWifeVoiceReply: Schema.boolean().default(false).description("语音回复"),
+      .description("日老婆冷却时间，单位秒，按用户+群分别计算，默认 10。"),
+    kissWifeCoolingTime: Schema.number()
+      .default(60)
+      .description("亲老婆/亲亲冷却时间，单位秒，按用户+群分别计算，默认 60。"),
+    dateWifeCoolingTime: Schema.number()
+      .default(21600)
+      .description("约会冷却时间，单位秒，按用户+群分别计算，默认 21600（6 小时）。"),
     fuckWifeBlockGroup: Schema.array(Schema.string())
       .default([])
       .collapse()
-      .description("日老婆屏蔽群组"),
-  }).description("日老婆设置"),
+      .description("禁用 日老婆 命令的群号列表。"),
+    kissWifeBlockGroup: Schema.array(Schema.string())
+      .default([])
+      .collapse()
+      .description("禁用 亲老婆/亲亲 命令的群号列表。"),
+    dateWifeBlockGroup: Schema.array(Schema.string())
+      .default([])
+      .collapse()
+      .description("禁用 约会 命令的群号列表。"),
+    affectionCatastropheSwitchgear: Schema.boolean()
+      .default(false)
+      .description("是否启用极低概率好感重事件。触发后当前老婆好感清零、失去当前老婆，并进入禁抽提示时间。"),
+    affectionCatastropheProbability: Schema.number()
+      .default(0.1)
+      .min(0)
+      .max(100)
+      .description("好感重事件触发概率，单位百分比，默认 0.1。影响 日老婆、亲老婆/亲亲、约会。"),
+    affectionCatastropheBanSeconds: Schema.number()
+      .default(3600)
+      .description("好感重事件后的禁抽提示时间，单位秒，默认 3600。影响 抽老婆。"),
+  }).description("好感互动设置"),
+
   Schema.object({
     messageRecall: Schema.object({
-      enabled: Schema.boolean().default(false).description("是否开启插件消息撤回"),
-      delay: Schema.number().default(60).description("撤回延迟(秒)"),
-      draw: Schema.boolean().default(true).description("撤回“抽老婆”相关消息"),
-      ntr: Schema.boolean().default(true).description("撤回“牛老婆”相关消息"),
-      query: Schema.boolean().default(true).description("撤回“查老婆”相关消息"),
-      album: Schema.boolean().default(true).description("撤回“老婆图鉴”相关消息"),
-      divorce: Schema.boolean().default(true).description("撤回“离婚”相关消息"),
-      exchange: Schema.boolean().default(true).description("撤回“交换老婆”相关消息"),
-      affection: Schema.boolean().default(true).description("撤回“日老婆/好感度”相关消息"),
-      add: Schema.boolean().default(true).description("撤回“添加老婆”相关消息"),
-      remove: Schema.boolean().default(true).description("撤回“删除老婆”相关消息"),
-      update: Schema.boolean().default(true).description("撤回“更新老婆”相关消息"),
-      archive: Schema.boolean().default(true).description("撤回“老婆档案”相关消息"),
-      userArchive: Schema.boolean().default(true).description("撤回“用户档案”相关消息"),
-      sync: Schema.boolean().default(true).description("撤回“更新老婆数据”相关消息"),
-      rename: Schema.boolean().default(true).description("撤回“重命名老婆”相关消息"),
+      enabled: Schema.boolean().default(false).description("是否开启插件消息撤回。"),
+      delay: Schema.number().default(60).description("插件消息撤回延迟，单位秒，默认 60。"),
+      draw: Schema.boolean().default(true).description("撤回 抽老婆 相关消息。"),
+      ntr: Schema.boolean().default(true).description("撤回 牛老婆 相关消息。"),
+      query: Schema.boolean().default(true).description("撤回 查老婆 相关消息。"),
+      album: Schema.boolean().default(true).description("撤回 老婆图鉴 相关消息。"),
+      divorce: Schema.boolean().default(true).description("撤回 离婚 相关消息。"),
+      exchange: Schema.boolean().default(true).description("撤回 交换老婆 相关消息。"),
+      affection: Schema.boolean().default(true).description("撤回 日老婆、亲老婆/亲亲、约会 相关消息。"),
+      add: Schema.boolean().default(true).description("撤回 新增老婆 相关消息。"),
+      remove: Schema.boolean().default(true).description("撤回 删除老婆 相关消息。"),
+      update: Schema.boolean().default(true).description("撤回 更新老婆 相关消息。"),
+      archive: Schema.boolean().default(true).description("撤回 群老婆档案 相关消息。"),
+      userArchive: Schema.boolean().default(true).description("撤回 用户档案、群档案 相关消息。"),
+      sync: Schema.boolean().default(true).description("撤回 更新老婆数据 相关消息。"),
+      rename: Schema.boolean().default(true).description("撤回 重命名老婆 相关消息。"),
     })
       .default({} as any)
-      .description("为不同指令设置独立的撤回开关"),
+      .description("为不同命令设置独立的插件消息撤回开关。"),
   }).description("消息撤回设置"),
+
   Schema.object({
     wifeAllOperationGroup: Schema.array(Schema.string())
       .role("table")
-      .description("允许所有老婆操作权限的用户组"),
+      .default([])
+      .description("拥有所有老婆管理权限的用户 ID 列表。影响 新增老婆、更新老婆、删除老婆、重命名老婆。"),
     wifeUploadGroup: Schema.array(Schema.string())
       .role("table")
-      .description("仅允许上传老婆权限的用户组"),
+      .default([])
+      .description("允许使用 新增老婆 的用户 ID 列表。"),
     wifeUpdateGroup: Schema.array(Schema.string())
       .role("table")
-      .description("仅允许更新老婆权限的用户组"),
+      .default([])
+      .description("允许使用 更新老婆、重命名老婆 的用户 ID 列表。"),
     wifeDeleteGroup: Schema.array(Schema.string())
       .role("table")
-      .description("仅允许删除老婆权限的用户组"),
-  }).description("老婆更新权限设置"),
+      .default([])
+      .description("允许使用 删除老婆 的用户 ID 列表。"),
+  }).description("老婆管理权限设置"),
 ]);

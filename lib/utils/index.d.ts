@@ -10,7 +10,7 @@ import { upWifeData } from "./upWifeData";
 import { createInteraction } from "./createInteraction";
 import readImageAsBinarySync from "./readImageAsBinarySync";
 import { isSameDay } from "./isSameDay";
-import { camelCase } from "./camelCase";
+import * as affection from "./affection";
 declare const _default: {
     createUserData: typeof createUserData;
     createGroupData: typeof createGroupData;
@@ -34,18 +34,14 @@ declare const _default: {
             colorDir: string;
             grayDir: string;
         }>;
-        generateMixedBackgroundImage: (ctx: import("koishi").Context, config: import("../config").Config, colorImageNames: any, options?: {
-            backgroundPath?: string;
-            colorDir?: string;
-            grayDir?: string;
-            imageSize?: number;
-            gridWidth?: number;
-            padding?: number;
+        generateMixedBackgroundImage: (ctx: import("koishi").Context, config: import("../config").Config, colorImageNames: string[], options?: {
+            cacheKey?: string;
         }) => Promise<Buffer<ArrayBufferLike>>;
+        clearAlbumCache: () => void;
     };
     createInteraction: typeof createInteraction;
     readImageAsBinarySync: typeof readImageAsBinarySync;
     isSameDay: typeof isSameDay;
-    camelCase: typeof camelCase;
+    affection: typeof affection;
 };
 export default _default;

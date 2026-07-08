@@ -58,6 +58,7 @@ export async function checkGroupDate(
         ntrCount:0,
         divorceCount:0,
         wifeName:'',
+        currentWifeAffection: 0,
         // todayAffection:[],
        }
     );

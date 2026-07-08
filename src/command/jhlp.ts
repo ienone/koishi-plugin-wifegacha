@@ -132,7 +132,7 @@ async function exchangeWife(ctx: Context,session: Session, myId: string, userId:
 }
 
 export function jhlp(ctx: Context, config: Config) {
-  ctx.command("交换老婆 <userId> 和指定群友交换老婆").action(async ({ session }, userId) => {
+  ctx.command("交换老婆 <userId>", "向被 @ 群友发起当前老婆交换请求").action(async ({ session }, userId) => {
     const send = createRecallSender(session, ctx, config, "exchange");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;

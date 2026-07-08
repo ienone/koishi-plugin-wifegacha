@@ -11,7 +11,7 @@ import { upWifeData } from "./upWifeData";
 import { createInteraction } from "./createInteraction";
 import readImageAsBinarySync from "./readImageAsBinarySync";
 import { isSameDay } from "./isSameDay";
-import { camelCase } from "./camelCase";
+import * as affection from "./affection";
 export default {
   createUserData,
   createGroupData,
@@ -26,5 +26,5 @@ export default {
   createInteraction,
   readImageAsBinarySync,
   isSameDay,
-  camelCase,
+  affection,
 };

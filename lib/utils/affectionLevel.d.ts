@@ -1,1 +1,1 @@
-export declare function affectionLevel(affection: number): 0 | 1 | 5 | 3 | 4 | 2 | 6 | 7 | 8 | 9;
+export declare function affectionLevel(affection: number): 0 | 1 | 5 | 2 | 3 | 4 | 6 | 7 | 8 | 9;
