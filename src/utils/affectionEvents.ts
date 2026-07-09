@@ -257,9 +257,7 @@ export function rollAffectionEvent(config: Config, action: AffectionInteractionA
   const eventProbability = clamp(Number(config.affectionEventProbability ?? 0), 0, 100);
   if (Math.random() * 100 >= eventProbability) return noEvent;
 
-  const preset = config.affectionEventPreset ?? "balanced";
-  const heavyAllowed = preset === "chaos"
-    || Math.random() * 100 < clamp(Number(config.affectionEventHeavyProbability ?? 0), 0, 100);
+  const heavyAllowed = Math.random() * 100 < clamp(Number(config.affectionEventHeavyProbability ?? 0), 0, 100);
   const customRules = (config.customAffectionEvents ?? [])
     .map(normalizeCustomRule)
     .filter((rule): rule is AffectionEventRule => Boolean(rule));
@@ -267,7 +265,6 @@ export function rollAffectionEvent(config: Config, action: AffectionInteractionA
     if (rule.enabled === false) return false;
     if (!rule.actions.includes(action)) return false;
     if (rule.heavy && !heavyAllowed) return false;
-    if (preset === "light" && (rule.heavy || rule.deltaValue < -3 || rule.effects?.loseCurrentWife)) return false;
     return true;
   });
   const rule = pick(candidates);

@@ -13,7 +13,6 @@ Koishi 设置页已经提供以下彩蛋相关配置：
 - `affectionEventSwitchgear`：是否启用好感互动彩蛋。
 - `affectionEventProbability`：每次互动触发彩蛋的概率。
 - `affectionEventHeavyProbability`：重事件进入候选池的概率。
-- `affectionEventPreset`：预设模式，包含 `balanced`、`light`、`chaos`。
 - `customAffectionEvents`：自定义彩蛋事件表，可配置适用指令、权重、好感变化方式、文案和特殊效果。
 
 内置彩蛋事件目前仍写在代码里的 `presetRules` 中；自定义事件会与内置事件合并后按权重抽取。

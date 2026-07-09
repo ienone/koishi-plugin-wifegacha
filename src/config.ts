@@ -34,7 +34,6 @@ export interface Config {
   affectionEventSwitchgear: boolean;
   affectionEventProbability: number;
   affectionEventHeavyProbability: number;
-  affectionEventPreset: "balanced" | "light" | "chaos";
   customAffectionEvents: Array<{
     id: string;
     enabled: boolean;
@@ -174,14 +173,6 @@ export const ConfigSchema: Schema<Config> = Schema.intersect([
       .max(100)
       .step(0.1)
       .description("彩蛋池中允许重事件进入抽取的概率，单位百分比，默认 1。重事件可能导致失败、清零、失去当前老婆或禁抽。"),
-    affectionEventPreset: Schema.union([
-      Schema.const("balanced").description("标准：正负事件都有，重事件受独立概率限制"),
-      Schema.const("light").description("温和：过滤重事件和高惩罚事件"),
-      Schema.const("chaos").description("混沌：使用完整事件池，适合娱乐群"),
-    ])
-      .role("radio")
-      .default("balanced")
-      .description("好感彩蛋预设。"),
     customAffectionEvents: Schema.array(Schema.object({
       id: Schema.string().required().description("事件 ID，建议使用英文或拼音，不能重复"),
       enabled: Schema.boolean().default(true).description("是否启用该自定义事件"),

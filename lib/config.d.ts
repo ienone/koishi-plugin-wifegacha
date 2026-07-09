@@ -29,7 +29,6 @@ export interface Config {
     affectionEventSwitchgear: boolean;
     affectionEventProbability: number;
     affectionEventHeavyProbability: number;
-    affectionEventPreset: "balanced" | "light" | "chaos";
     customAffectionEvents: Array<{
         id: string;
         enabled: boolean;
