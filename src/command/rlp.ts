@@ -86,6 +86,7 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
   const rolledEvent = rollAffectionEvent(config, action, delta);
   delta = rolledEvent.delta;
   const event = rolledEvent.message;
+  const eventLine = rolledEvent.applied ? `\n事件：${event}` : "";
 
   const legacyCatastrophe = Boolean(config.affectionCatastropheSwitchgear)
     && Math.random() * 100 < config.affectionCatastropheProbability;
@@ -137,16 +138,17 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
 
   if (catastrophic) {
     const banSeconds = rolledEvent.effects.drawBanSeconds || config.affectionCatastropheBanSeconds;
+    const eventText = rolledEvent.applied ? event : "发生了极低概率好感重事件。";
     await send([
       h("quote", { id: session.messageId }),
-      `${event}\n${wifeName} 好感清零${legacyCatastrophe || eventLosesWife ? "，并暂时离开了你" : ""}。禁抽提示时长：${legacyCatastrophe || eventLosesWife ? `${banSeconds} 秒` : "无"}。`,
+      `${eventText}\n${wifeName} 好感清零${legacyCatastrophe || eventLosesWife ? "，并暂时离开了你" : ""}。禁抽提示时长：${legacyCatastrophe || eventLosesWife ? `${banSeconds} 秒` : "无"}。`,
     ]);
     return;
   }
 
   await send([
     h("quote", { id: session.messageId }),
-    `${wifeName} 好感度 ${delta >= 0 ? "+" : ""}${delta}\n事件：${event}\n当前好感度：${history.affection}\n好感等级：${formatAffectionLevel(history.affectionLevel)}`,
+    `${wifeName} 好感度 ${delta >= 0 ? "+" : ""}${delta}${eventLine}\n当前好感度：${history.affection}\n好感等级：${formatAffectionLevel(history.affectionLevel)}`,
   ]);
 }
 
