@@ -204,12 +204,27 @@ function recentLogs(user: WifeUser, wifeName: string, windowMs: number, now = ne
   return (history?.interactionLogs ?? []).filter((log) => now.getTime() - new Date(log.time).getTime() <= windowMs);
 }
 
-function recentActionLogs(user: WifeUser, wifeName: string, action: WifeAction, windowMs: number, now = new Date()) {
-  return recentLogs(user, wifeName, windowMs, now).filter((log) => log.action === action);
+function isAffectionInteraction(action: unknown): action is Extract<WifeAction, "fuck" | "kiss" | "date"> {
+  return action === "fuck" || action === "kiss" || action === "date";
 }
 
-function smoothFrequencyFactor(count: number) {
-  return 0.2 + 1.05 * Math.tanh(0.85 - 0.95 * count);
+function isAffectionInteractionLog(log: AffectionEvent): log is AffectionEvent & { action: Extract<WifeAction, "fuck" | "kiss" | "date"> } {
+  return isAffectionInteraction(log.action);
+}
+
+function interactionPressure(logs: AffectionEvent[], now: Date, halfLifeMs: number) {
+  return logs.reduce((total, log) => {
+    const elapsed = Math.max(0, now.getTime() - new Date(log.time).getTime());
+    return total + Math.pow(0.5, elapsed / halfLifeMs);
+  }, 0);
+}
+
+function sigmoid(value: number) {
+  return 1 / (1 + Math.exp(-value));
+}
+
+function smoothFrequencyFactor(pressure: number) {
+  return 1.12 - 1.55 * sigmoid((pressure - 0.85) / 0.35);
 }
 
 function smoothSwitchFactor(switchCount: number) {
@@ -223,9 +238,12 @@ function smoothAffectionGainFactor(affection: number) {
 export function rollAffectionDelta(user: WifeUser, wifeName: string, action: WifeAction, cooldownSeconds = 0) {
   const now = new Date();
   const base = action === "date" ? 4 : action === "kiss" ? 1.2 : 2;
-  const frequencyWindowMs = Math.max(cooldownSeconds * 4 * 1000, 60 * 1000);
-  const sameActionCount = recentActionLogs(user, wifeName, action, frequencyWindowMs, now).length;
-  const frequencyFactor = smoothFrequencyFactor(sameActionCount);
+  const pressureHalfLifeMs = Math.max(cooldownSeconds * 2 * 1000, 60 * 1000);
+  const pressureWindowMs = Math.max(cooldownSeconds * 6 * 1000, 5 * 60 * 1000);
+  const logs = recentLogs(user, wifeName, pressureWindowMs, now).filter(isAffectionInteractionLog);
+  const actionPressure = interactionPressure(logs.filter((log) => log.action === action), now, pressureHalfLifeMs);
+  const totalPressure = interactionPressure(logs, now, pressureHalfLifeMs);
+  const frequencyFactor = smoothFrequencyFactor(actionPressure * 0.7 + totalPressure * 0.3);
   const switchCount = user.wifeHistories.filter((item) => now.getTime() - toDate(item.getWifeDate, now).getTime() <= 7 * DAY_MS).length;
   const switchFactor = smoothSwitchFactor(switchCount);
   const currentAffection = findWifeHistory(user, wifeName)?.affection ?? 0;
@@ -235,7 +253,6 @@ export function rollAffectionDelta(user: WifeUser, wifeName: string, action: Wif
   const positiveFactor = frequencyFactor > 0 ? gainFactor : 1;
   let delta = Math.round(base * frequencyFactor * switchFactor * positiveFactor * eventMultiplier + jitter);
 
-  if (action === "date" && Math.random() < 0.08) delta -= 4;
   return clamp(delta, action === "date" ? -6 : -3, action === "date" ? 10 : 5);
 }
 
@@ -259,11 +276,13 @@ export function calculateNtrProbability(attacker: WifeUser, defender: WifeUser, 
   normalizeWifeUser(defender);
   const attackerAffection = findWifeHistory(attacker, wifeName)?.affection ?? 0;
   const defenderAffection = defender.currentWifeAffection ?? findWifeHistory(defender, wifeName)?.affection ?? 0;
-  const attackerExperience = Math.min(24, (attacker.ntrSuccessCount ?? 0) * 2 + (attacker.ntrTotalCount ?? 0) * 0.25);
-  const affectionBonus = Math.min(24, attackerAffection / 4);
-  const recentNtrPenalty = Math.min(20, (defender.ntrCount ?? 0) * 2);
-  const risk = attackerExperience + affectionBonus + recentNtrPenalty - defenderAffection;
-  return clamp(100 / (1 + Math.exp(-risk / 8)), 0, 100);
+  const rawExperience = (attacker.ntrSuccessCount ?? 0) * 2 + (attacker.ntrTotalCount ?? 0) * 0.25;
+  const attackerExperience = 18 * (1 - Math.exp(-rawExperience / 18));
+  const affectionBonus = 14 * (1 - Math.exp(-Math.max(0, attackerAffection) / 50));
+  const recentNtrPenalty = 12 * (1 - Math.exp(-Math.max(0, defender.ntrCount ?? 0) / 4));
+  const defenderProtection = Math.max(0, defenderAffection) * 0.925;
+  const risk = attackerExperience + affectionBonus + recentNtrPenalty - defenderProtection;
+  return clamp(100 / (1 + Math.exp(-risk / 16)), 0, 100);
 }
 
 export function formatCooldown(last: Date | undefined, seconds: number) {

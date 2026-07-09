@@ -127,8 +127,8 @@ export const ConfigSchema: Schema<Config> = Schema.intersect([
       .default(true)
       .description("是否启用 约会 命令。"),
     fuckWifeCoolingTime: Schema.number()
-      .default(10)
-      .description("日老婆冷却时间，单位秒，按用户+群分别计算，默认 10。"),
+      .default(600)
+      .description("日老婆冷却时间，单位秒，按用户+群分别计算，默认 600。"),
     kissWifeCoolingTime: Schema.number()
       .default(60)
       .description("亲老婆/亲亲冷却时间，单位秒，按用户+群分别计算，默认 60。"),
