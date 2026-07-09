@@ -18,7 +18,7 @@ export function lptj(ctx: Context, config: Config) {
     const send = createRecallSender(session, ctx, config, "album");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
 
-    const targetId = parseAt(targetUserId) ?? session.userId;
+    const targetId = parseAt(session.content) ?? parseAt(targetUserId) ?? session.userId;
     await utils.createUserData(ctx, session);
     if (targetId !== session.userId) await utils.createTarget(ctx, session, targetId);
 

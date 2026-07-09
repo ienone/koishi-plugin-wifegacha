@@ -4,6 +4,10 @@ import utils from "../utils";
 import { createRecallSender } from "../utils/messageRecall";
 import { ensureWifeHistory, normalizeWifeUser, setCurrentWife, settleAffectionDecay, syncCurrentAffection } from "../utils/affection";
 
+function parseAt(input?: string) {
+  return input?.match(/<at id="(\d+)"\s*\/>/)?.[1];
+}
+
 // 交换老婆函数
 function markExchangeGet(userData, wifeName: string) {
   const history = ensureWifeHistory(userData, wifeName, {
@@ -80,13 +84,18 @@ async function exchangeWife(ctx: Context, session: Session, myId: string, userId
   return true;
 }
 export function jhlp(ctx: Context, config: Config) {
-  ctx.command("交换老婆 <userId>", "向被 @ 群友发起当前老婆交换请求").action(async ({ session }, userId) => {
+  ctx.command("交换老婆 [userId]", "向被 @ 群友发起当前老婆交换请求").action(async ({ session }, userId) => {
     const send = createRecallSender(session, ctx, config, "exchange");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) {
       return;
     }
-    userId = session.content.match(/<at id="(\d+)"\s*\/>/)?.[1];
+    userId = parseAt(session.content) ?? parseAt(userId);
     const myId = session.userId;
+    const messageId = session.messageId;
+    if (!userId) {
+      send([h("quote", { id: messageId }), "请@要交换的群友"]);
+      return;
+    }
     // 创建用户数据
     await utils.createUserData(ctx, session);
     // 创建目标用户与当前用户交互数据
@@ -96,11 +105,6 @@ export function jhlp(ctx: Context, config: Config) {
     // 创建目标用户数据
     await utils.createTarget(ctx, session, userId);
     // 检查是否@了群友
-    const messageId = session.messageId;
-    if (!userId) {
-      send([h("quote", { id: messageId }), "请@要交换的群友"]);
-      return;
-    }
     // 获取用户数据
   let userData = (
     await ctx.database.get("wifeUser", {

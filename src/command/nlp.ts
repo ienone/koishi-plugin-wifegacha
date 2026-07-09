@@ -9,7 +9,7 @@ function parseAt(input?: string) {
 }
 
 export function nlp(ctx: Context, config: Config) {
-  ctx.command("牛老婆 <userId>", "尝试牛走被 @ 群友的当前老婆").action(async ({ session }, userId) => {
+  ctx.command("牛老婆 [userId]", "尝试牛走被 @ 群友的当前老婆").action(async ({ session }, userId) => {
     const send = createRecallSender(session, ctx, config, "ntr");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
     if (!config.ntrSwitchgear) {

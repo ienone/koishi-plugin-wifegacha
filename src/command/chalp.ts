@@ -14,7 +14,7 @@ export function chalp(ctx: Context, config: Config) {
     const send = createRecallSender(session, ctx, config, "query");
     if (ctx.config.blockGroup.includes(session.channelId.toString())) return;
 
-    const targetId = parseAt(userId) ?? session.userId;
+    const targetId = parseAt(session.content) ?? parseAt(userId) ?? session.userId;
     if (targetId === session.userId) await utils.createUserData(ctx, session);
     else await utils.createTarget(ctx, session, targetId);
 

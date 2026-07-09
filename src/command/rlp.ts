@@ -82,7 +82,7 @@ async function handleAffection(ctx: Context, config: Config, session, action: "f
   }
 
   const wifeName = userData.wifeName;
-  let delta = rollAffectionDelta(userData, wifeName, action);
+  let delta = rollAffectionDelta(userData, wifeName, action, cooldown);
   const rolledEvent = rollAffectionEvent(config, action, delta);
   delta = rolledEvent.delta;
   const event = rolledEvent.message;

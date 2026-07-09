@@ -23,7 +23,7 @@ export declare function addAffection(user: WifeUser, wifeName: string, delta: nu
 export declare function settleAffectionDecay(user: WifeUser, now?: Date): boolean;
 export declare function affectionLevel(affection: number): number;
 export declare function formatAffectionLevel(level: number): string;
-export declare function rollAffectionDelta(user: WifeUser, wifeName: string, action: WifeAction): number;
+export declare function rollAffectionDelta(user: WifeUser, wifeName: string, action: WifeAction, cooldownSeconds?: number): number;
 export declare function randomAffectionEvent(action: WifeAction, delta: number): string;
 export declare function calculateNtrProbability(attacker: WifeUser, defender: WifeUser, wifeName: string): number;
 export declare function formatCooldown(last: Date | undefined, seconds: number): string;
